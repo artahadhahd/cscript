@@ -79,12 +79,11 @@ public:
     }
 
     void run() {
-        if (!parse_typedef()) {
-            std::cout << "Failed to parse typedef";
-        }
-
-        if (!parse_typedef()) {
-            std::cout << "Failed to parse typedef";
+        while (has()) {
+            if (!parse_typedef()) {
+                parse_variable();
+            }
+            std::cout << std::endl;
         }
     }
 private:
@@ -121,8 +120,41 @@ private:
         exit(1);
     }
 
+    bool parse_variable() {
+        skip_whitespace();
+        if (!has()) { return false; }
+        std::vector<std::string> assignee;
+        while (!parse_symbol(";")) {
+            std::string const ident = parser_identifier();
+            assignee.push_back(ident);
+        }
+        std::string const variable_name = assignee.back();
+        if (get_keyword[variable_name] != KEYWORDS::NOTAKEYWORD) {
+            exit_forcefully("Couldn't parse variable: ill-formed");
+        }
+        if (typedef_pool[variable_name].size() != 0) {
+            exit_forcefully("Couldn't parse variable: variable name is a typedef, expected an identifier.");
+        }
+        assignee.pop_back();
+        for (auto a : assignee) {
+            if (get_keyword[a] == KEYWORDS::NOTAKEYWORD) {
+                if (typedef_pool[a].size() == 0) {
+                    exit_forcefully("Not a type in variable definition");
+                }
+                assignee.pop_back();
+                for (auto v : typedef_pool[a]) {
+                    assignee.push_back(v);
+                }
+            }
+        }
+        std::cout << "Variable Declaration '" << variable_name << "' with type\n";
+        std::cout << join_vec(assignee, " ") << "\n";
+        return true;
+    }
+
     bool parse_typedef() {
         skip_whitespace();
+        if (!has()) {return false;}
         if (!parse_symbol("typedef")) {
             return false;
         }
@@ -147,6 +179,7 @@ private:
             }
         }
         typedef_pool[typedef_name] = assignee;
+        std::cout << join_vec(assignee, " ");
         return true;
     }
 

@@ -1,2 +1,2 @@
 all:
-	g++ -o Compiler *.cpp -I. -Wall -Wextra
+	g++ -o Compiler *.cpp -I. -Wall -Wextra -g
